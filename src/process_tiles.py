@@ -4,13 +4,13 @@
 
 import torch
 from src.env import create_train_env
-from src.model import ActorCritic
+from src.model_tiles import ActorCritic
 import torch.nn.functional as F
 from torch.distributions import Categorical
 from collections import deque
 from tensorboardX import SummaryWriter
 import timeit
-
+from utils import *
 
 def local_train(index, opt, global_model, optimizer, save=False):
     torch.manual_seed(123 + index)
@@ -21,14 +21,17 @@ def local_train(index, opt, global_model, optimizer, save=False):
     writer = SummaryWriter(opt.log_path)
 
     env, num_states, num_actions = create_train_env(opt.world, opt.stage, opt.action_type)
+    tiles = SMB.get_tiles_num(env.unwrapped.ram)
+    tiles = process_tiles(tiles)
 
-    local_model = ActorCritic(num_states, num_actions)
+    local_model = ActorCritic(1, num_actions)
 
     if opt.use_gpu:
         local_model.cuda()
 
     local_model.train()
-    state = torch.from_numpy(env.reset())
+    state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+    env.reset()
 
     if opt.use_gpu:
         state = state.cuda()
@@ -77,7 +80,10 @@ def local_train(index, opt, global_model, optimizer, save=False):
             action = m.sample().item()
 
             state, reward, done, _ = env.step(action)
-            state = torch.from_numpy(state)
+            tiles = SMB.get_tiles_num(env.unwrapped.ram)
+            tiles = process_tiles(tiles)
+            state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+            env.reset()
             if opt.use_gpu:
                 state = state.cuda()
             if curr_step > opt.num_global_steps:
@@ -121,7 +127,9 @@ def local_train(index, opt, global_model, optimizer, save=False):
             entropy_loss = entropy_loss + entropy
 
         total_loss = -actor_loss + critic_loss - opt.beta * entropy_loss
+
         writer.add_scalar("Train_{}/Loss".format(index), total_loss, curr_episode)
+        # print("Train_{}/Loss".format(index), total_loss.item(), curr_episode)
         optimizer.zero_grad()
         total_loss.backward()
 
@@ -143,9 +151,13 @@ def local_train(index, opt, global_model, optimizer, save=False):
 def local_test(index, opt, global_model):
     torch.manual_seed(123 + index)
     env, num_states, num_actions = create_train_env(opt.world, opt.stage, opt.action_type)
-    local_model = ActorCritic(num_states, num_actions)
+    tiles = SMB.get_tiles_num(env.unwrapped.ram)
+    tiles = process_tiles(tiles)
+    local_model = ActorCritic(1, num_actions)
+
     local_model.eval()
-    state = torch.from_numpy(env.reset())
+    state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+    env.reset()
     done = True
     curr_step = 0
     actions = deque(maxlen=opt.max_actions)
@@ -165,6 +177,9 @@ def local_test(index, opt, global_model):
         policy = F.softmax(logits, dim=1)
         action = torch.argmax(policy).item()
         state, reward, done, _ = env.step(action)
+        tiles = SMB.get_tiles_num(env.unwrapped.ram)
+        tiles = process_tiles(tiles)
+
         env.render()
         actions.append(action)
         if curr_step > opt.num_global_steps or actions.count(actions[0]) == actions.maxlen:
@@ -173,4 +188,4 @@ def local_test(index, opt, global_model):
             curr_step = 0
             actions.clear()
             state = env.reset()
-        state = torch.from_numpy(state)
+        state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()

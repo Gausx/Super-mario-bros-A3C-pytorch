@@ -108,6 +108,7 @@ def local_train(index, opt, global_model, optimizer, save=False):
 
         total_loss = -actor_loss + critic_loss - opt.beta * entropy_loss
         writer.add_scalar("Train_{}/Loss".format(index), total_loss, curr_episode)
+        # print("Train_{}/Loss".format(index), total_loss.item(), curr_episode)
         optimizer.zero_grad()
         total_loss.backward()
 

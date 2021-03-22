@@ -2,8 +2,9 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 
-import os
-os.environ['OMP_NUM_THREADS'] = '1'
+import os # NOQA: E402
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"  # NOQA: E402
 import argparse
 import torch
 from src.env import create_train_env
@@ -27,14 +28,14 @@ def get_args():
     parser.add_argument('--beta', type=float, default=0.01, help='entropy coefficient')
     parser.add_argument("--num_local_steps", type=int, default=50)
     parser.add_argument("--num_global_steps", type=int, default=5e6)
-    parser.add_argument("--num_processes", type=int, default=0)
+    parser.add_argument("--num_processes", type=int, default=4)
     parser.add_argument("--save_interval", type=int, default=500, help="Number of steps between savings")
     parser.add_argument("--max_actions", type=int, default=200, help="Maximum repetition steps in test phase")
     parser.add_argument("--log_path", type=str, default="tensorboard/a3c_super_mario_bros")
     parser.add_argument("--saved_path", type=str, default="trained_models")
     parser.add_argument("--load_from_previous_stage", type=bool, default=False,
                         help="Load weight from previous trained stage")
-    parser.add_argument("--use_gpu", type=bool, default=False)
+    parser.add_argument("--use_gpu", type=bool, default=True)
     args = parser.parse_args()
     return args
 
@@ -75,8 +76,8 @@ def train(opt):
             process = mp.Process(target=local_train, args=(index, opt, global_model, optimizer))
         process.start()
         processes.append(process)
-    process = mp.Process(target=local_train, args=(opt.num_processes, opt, global_model,optimizer))
-    # process = mp.Process(target=local_test, args=(opt.num_processes, opt, global_model))
+    # process = mp.Process(target=local_train, args=(opt.num_processes, opt, global_model,optimizer))
+    process = mp.Process(target=local_test, args=(opt.num_processes, opt, global_model))
     process.start()
     processes.append(process)
     for process in processes:

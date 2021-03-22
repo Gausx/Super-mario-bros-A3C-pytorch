@@ -93,7 +93,7 @@ class CustomSkipFrame(Wrapper):
 
 def create_train_env(world, stage, action_type, output_path=None):
     # env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v3".format(world, stage))
-    env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v3".format(world, stage))
+    env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v0".format(world, stage))
     tiles = SMB.get_tiles_num(env.unwrapped.ram)
     tiles = process_tiles(tiles)
     if output_path:
@@ -115,9 +115,4 @@ def create_train_env(world, stage, action_type, output_path=None):
     return env, env.observation_space.shape[0], len(actions)
 
 
-def process_tiles(tiles):
-    res = np.zeros((15, 16))
-    for i in range(15):
-        for j in range(16):
-            res[i, j] = tiles[(i, j)].value
-    return res
+

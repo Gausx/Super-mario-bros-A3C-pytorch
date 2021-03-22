@@ -379,3 +379,9 @@ class SMB(object):
 
         return ram[addr]
 
+def process_tiles(tiles):
+    res = np.zeros((15, 16))
+    for i in range(15):
+        for j in range(16):
+            res[i, j] = tiles[(i, j)].value
+    return res
