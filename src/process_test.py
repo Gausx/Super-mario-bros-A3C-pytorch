@@ -62,7 +62,6 @@ def local_train(index, opt, global_model, optimizer, save=False):
             action = m.sample().item()
 
             state, reward, done, _ = env.step(action)
-            
             state = torch.from_numpy(state)
             if opt.use_gpu:
                 state = state.cuda()
