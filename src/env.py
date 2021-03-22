@@ -94,7 +94,8 @@ class CustomSkipFrame(Wrapper):
 def create_train_env(world, stage, action_type, output_path=None):
     # env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v3".format(world, stage))
     env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v3".format(world, stage))
-
+    tiles = SMB.get_tiles_num(env.unwrapped.ram)
+    tiles = process_tiles(tiles)
     if output_path:
         monitor = Monitor(256, 240, output_path)
     else:
