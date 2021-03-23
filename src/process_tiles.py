@@ -92,6 +92,8 @@ def local_train(index, opt, global_model, optimizer, save=False):
             if done:
                 curr_step = 0
                 state = torch.from_numpy(env.reset())
+                # state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+                # env.reset()
                 if opt.use_gpu:
                     state = state.cuda()
 
