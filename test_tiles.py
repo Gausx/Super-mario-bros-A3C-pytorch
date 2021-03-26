@@ -34,10 +34,14 @@ def test(opt):
         model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
         model.load_state_dict(model_dict['net'])
         model.cuda()
+        print("episode", model_dict['curr_episode'])
+        print("time", model_dict['time'])
     else:
         model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage),
                                 map_location=lambda storage, loc: storage)
         model.load_state_dict(model_dict['net'])
+        print("episode",model_dict['curr_episode'])
+        print("time",model_dict['time'])
 
     model.eval()
     env.reset()
