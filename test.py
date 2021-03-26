@@ -14,7 +14,8 @@ import torch.nn.functional as F
 
 def get_args():
     parser = argparse.ArgumentParser(
-        """Implementation of model described in the paper: Asynchronous Methods for Deep Reinforcement Learning for Super Mario Bros""")
+        """Implementation of model described in the paper: Asynchronous Methods for Deep Reinforcement Learning for 
+        Super Mario Bros""")
     parser.add_argument("--world", type=int, default=1)
     parser.add_argument("--stage", type=int, default=1)
     parser.add_argument("--action_type", type=str, default="complex")
@@ -33,8 +34,12 @@ def test(opt):
         model.load_state_dict(torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage)))
         model.cuda()
     else:
-        model.load_state_dict(torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage),
-                                         map_location=lambda storage, loc: storage))
+        model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage),
+                                         map_location=lambda storage, loc: storage)
+        model.load_state_dict(model_dict['net'])
+        # model.load_state_dict(torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage),
+        #                                  map_location=lambda storage, loc: storage))
+
     model.eval()
     state = torch.from_numpy(env.reset())
     done = True
@@ -58,6 +63,7 @@ def test(opt):
         state, reward, done, info = env.step(action)
         state = torch.from_numpy(state)
         env.render()
+
         if info["flag_get"]:
             print("World {} stage {} completed".format(opt.world, opt.stage))
             break

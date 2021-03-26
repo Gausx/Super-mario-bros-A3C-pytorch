@@ -10,7 +10,6 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, COMPLEX_MOVEMENT, RIGH
 import cv2
 import numpy as np
 import subprocess as sp
-from utils import *
 
 
 class Monitor:
@@ -92,27 +91,18 @@ class CustomSkipFrame(Wrapper):
 
 
 def create_train_env(world, stage, action_type, output_path=None):
-    # env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v3".format(world, stage))
     env = gym_super_mario_bros.make("SuperMarioBros-{}-{}-v0".format(world, stage))
-    tiles = SMB.get_tiles_num(env.unwrapped.ram)
-    tiles = process_tiles(tiles)
     if output_path:
         monitor = Monitor(256, 240, output_path)
     else:
         monitor = None
-
     if action_type == "right":
         actions = RIGHT_ONLY
     elif action_type == "simple":
         actions = SIMPLE_MOVEMENT
     else:
         actions = COMPLEX_MOVEMENT
-
     env = JoypadSpace(env, actions)
     env = CustomReward(env, monitor)
     env = CustomSkipFrame(env)
-
     return env, env.observation_space.shape[0], len(actions)
-
-
-

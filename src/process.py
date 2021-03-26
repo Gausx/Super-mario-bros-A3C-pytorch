@@ -2,7 +2,7 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 
-import torch
+import torch,sys
 from src.env import create_train_env
 from src.model import ActorCritic
 import torch.nn.functional as F
@@ -14,6 +14,8 @@ import timeit
 
 def local_train(index, opt, global_model, optimizer, save=False):
     torch.manual_seed(123 + index)
+    info = {}
+    info["flag_get"] = False
     if save:
         start_time = timeit.default_timer()
     writer = SummaryWriter(opt.log_path)
@@ -28,11 +30,12 @@ def local_train(index, opt, global_model, optimizer, save=False):
     done = True
     curr_step = 0
     curr_episode = 0
-    while True:
+    # while True:
+    while True and info["flag_get"] == False:
         if save:
-            if curr_episode % opt.save_interval == 0 and curr_episode > 0:
-                torch.save(global_model.state_dict(),
-                           "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
+            # if curr_episode % opt.save_interval == 0 and curr_episode > 0:
+            #     torch.save(global_model.state_dict(),
+            #                "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
             print("Process {}. Episode {}".format(index, curr_episode))
         curr_episode += 1
         local_model.load_state_dict(global_model.state_dict())
@@ -61,8 +64,7 @@ def local_train(index, opt, global_model, optimizer, save=False):
             m = Categorical(policy)
             action = m.sample().item()
 
-            state, reward, done, _ = env.step(action)
-
+            state, reward, done, info = env.step(action)
             state = torch.from_numpy(state)
             if opt.use_gpu:
                 state = state.cuda()
@@ -108,7 +110,6 @@ def local_train(index, opt, global_model, optimizer, save=False):
 
         total_loss = -actor_loss + critic_loss - opt.beta * entropy_loss
         writer.add_scalar("Train_{}/Loss".format(index), total_loss, curr_episode)
-        # print("Train_{}/Loss".format(index), total_loss.item(), curr_episode)
         optimizer.zero_grad()
         total_loss.backward()
 
@@ -125,6 +126,19 @@ def local_train(index, opt, global_model, optimizer, save=False):
                 end_time = timeit.default_timer()
                 print('The code runs for %.2f s ' % (end_time - start_time))
             return
+
+        if save:
+            if info["flag_get"]:
+                end_time = timeit.default_timer()
+                config_state = {'net': global_model.state_dict(),
+                                'curr_episode': curr_episode,
+                                'time': end_time - start_time,
+                                }
+
+                torch.save(config_state,
+                           "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
+
+                sys.exit()
 
 
 def local_test(index, opt, global_model):

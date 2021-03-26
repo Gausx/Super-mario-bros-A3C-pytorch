@@ -2,7 +2,7 @@
 @author: Viet Nguyen <nhviet1009@gmail.com>
 """
 
-import torch
+import torch,sys
 from src.env import create_train_env
 from src.model_tiles import ActorCritic
 import torch.nn.functional as F
@@ -12,7 +12,10 @@ from tensorboardX import SummaryWriter
 import timeit
 from utils import *
 
+
 def local_train(index, opt, global_model, optimizer, save=False):
+    info = {}
+    info["flag_get"] = False
     torch.manual_seed(123 + index)
 
     if save:
@@ -30,8 +33,8 @@ def local_train(index, opt, global_model, optimizer, save=False):
         local_model.cuda()
 
     local_model.train()
-    state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
     env.reset()
+    state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
 
     if opt.use_gpu:
         state = state.cuda()
@@ -40,12 +43,12 @@ def local_train(index, opt, global_model, optimizer, save=False):
     curr_step = 0
     curr_episode = 0
 
-    while True:
+    while True and info["flag_get"] == False:
 
         if save:
-            if curr_episode % opt.save_interval == 0 and curr_episode > 0:
-                torch.save(global_model.state_dict(),
-                           "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
+            # if curr_episode % opt.save_interval == 0 and curr_episode > 0:
+            #     torch.save(global_model.state_dict(),
+            #                "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
             print("Process {}. Episode {}".format(index, curr_episode))
 
         curr_episode += 1
@@ -79,11 +82,13 @@ def local_train(index, opt, global_model, optimizer, save=False):
             m = Categorical(policy)
             action = m.sample().item()
 
-            state, reward, done, _ = env.step(action)
+            state, reward, done, info = env.step(action)
             tiles = SMB.get_tiles_num(env.unwrapped.ram)
             tiles = process_tiles(tiles)
             state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
-            env.reset()
+
+            env.render()
+
             if opt.use_gpu:
                 state = state.cuda()
             if curr_step > opt.num_global_steps:
@@ -91,9 +96,8 @@ def local_train(index, opt, global_model, optimizer, save=False):
 
             if done:
                 curr_step = 0
-                state = torch.from_numpy(env.reset())
-                # state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
-                # env.reset()
+                state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+                env.reset()
                 if opt.use_gpu:
                     state = state.cuda()
 
@@ -131,7 +135,6 @@ def local_train(index, opt, global_model, optimizer, save=False):
         total_loss = -actor_loss + critic_loss - opt.beta * entropy_loss
 
         writer.add_scalar("Train_{}/Loss".format(index), total_loss, curr_episode)
-        # print("Train_{}/Loss".format(index), total_loss.item(), curr_episode)
         optimizer.zero_grad()
         total_loss.backward()
 
@@ -148,6 +151,18 @@ def local_train(index, opt, global_model, optimizer, save=False):
                 end_time = timeit.default_timer()
                 print('The code runs for %.2f s ' % (end_time - start_time))
             return
+        if save:
+            if info["flag_get"]:
+                end_time = timeit.default_timer()
+                config_state = {'net': global_model.state_dict(),
+                                'curr_episode': curr_episode,
+                                'time': end_time - start_time,
+                                }
+
+                torch.save(config_state,
+                           "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
+
+                break
 
 
 def local_test(index, opt, global_model):
@@ -158,8 +173,9 @@ def local_test(index, opt, global_model):
     local_model = ActorCritic(1, num_actions)
 
     local_model.eval()
-    state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
     env.reset()
+    state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+
     done = True
     curr_step = 0
     actions = deque(maxlen=opt.max_actions)
@@ -178,14 +194,16 @@ def local_test(index, opt, global_model):
         logits, value, h_0, c_0 = local_model(state, h_0, c_0)
         policy = F.softmax(logits, dim=1)
         action = torch.argmax(policy).item()
-        state, reward, done, _ = env.step(action)
+        state, reward, done, info = env.step(action)
         tiles = SMB.get_tiles_num(env.unwrapped.ram)
         tiles = process_tiles(tiles)
 
         env.render()
         actions.append(action)
+
         if curr_step > opt.num_global_steps or actions.count(actions[0]) == actions.maxlen:
             done = True
+
         if done:
             curr_step = 0
             actions.clear()

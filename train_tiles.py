@@ -28,12 +28,12 @@ def get_args():
     parser.add_argument('--beta', type=float, default=0.01, help='entropy coefficient')
     parser.add_argument("--num_local_steps", type=int, default=50)
     parser.add_argument("--num_global_steps", type=int, default=5e6)
-    parser.add_argument("--num_processes", type=int, default=4)
+    parser.add_argument("--num_processes", type=int, default=1)
     parser.add_argument("--save_interval", type=int, default=500, help="Number of steps between savings")
     parser.add_argument("--max_actions", type=int, default=200, help="Maximum repetition steps in test phase")
     parser.add_argument("--log_path", type=str, default="tensorboard/a3c_super_mario_bros_tiles")
     parser.add_argument("--saved_path", type=str, default="trained_models_tiles")
-    parser.add_argument("--load_from_previous_stage", type=bool, default=False,
+    parser.add_argument("--load_from_previous_stage", type=bool, default=True,
                         help="Load weight from previous trained stage")
     parser.add_argument("--use_gpu", type=bool, default=True)
     args = parser.parse_args()
@@ -72,21 +72,23 @@ def train(opt):
             global_model.load_state_dict(torch.load(file_))
 
     optimizer = GlobalAdam(global_model.parameters(), lr=opt.lr)
-    processes = []
-
-    for index in range(opt.num_processes):
-        if index == 0:
-            process = mp.Process(target=local_train, args=(index, opt, global_model, optimizer, True))
-        else:
-            process = mp.Process(target=local_train, args=(index, opt, global_model, optimizer))
-        process.start()
-        processes.append(process)
-
-    process = mp.Process(target=local_test, args=(opt.num_processes, opt, global_model))
-    process.start()
-    processes.append(process)
-    for process in processes:
-        process.join()
+    local_train(0, opt, global_model, optimizer, True)
+    local_test(opt.num_processes, opt, global_model)
+    # processes = []
+    #
+    # for index in range(opt.num_processes):
+    #     if index == 0:
+    #         process = mp.Process(target=local_train, args=(index, opt, global_model, optimizer, True))
+    #     else:
+    #         process = mp.Process(target=local_train, args=(index, opt, global_model, optimizer))
+    #     process.start()
+    #     processes.append(process)
+    #
+    # process = mp.Process(target=local_test, args=(opt.num_processes, opt, global_model))
+    # process.start()
+    # processes.append(process)
+    # for process in processes:
+    #     process.join()
 
 
 if __name__ == "__main__":
