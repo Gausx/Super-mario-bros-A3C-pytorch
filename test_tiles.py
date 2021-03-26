@@ -31,7 +31,8 @@ def test(opt):
                                                     "{}/video_{}_{}.mp4".format(opt.output_path, opt.world, opt.stage))
     model = ActorCritic(1, num_actions)
     if torch.cuda.is_available():
-        model.load_state_dict(torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage)))
+        model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
+        model.load_state_dict(model_dict['net'])
         model.cuda()
     else:
         model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage),
