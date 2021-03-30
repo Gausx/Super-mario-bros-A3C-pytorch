@@ -34,7 +34,7 @@ def local_train(index, opt, global_model, optimizer, save=False):
     curr_step = 0
     curr_episode = 0
     # while True:
-    while True :
+    while True:
         if save:
             # if curr_episode % opt.save_interval == 0 and curr_episode > 0:
             #     torch.save(global_model.state_dict(),
@@ -147,7 +147,7 @@ def local_test(index, opt, global_model, start_time, curr_episode):
     done = True
     curr_step = 0
     actions = deque(maxlen=opt.max_actions)
-    while True:
+    while True and info["flag_get"] == False:
         curr_step += 1
         if done:
             local_model.load_state_dict(global_model.state_dict())
@@ -174,6 +174,7 @@ def local_test(index, opt, global_model, start_time, curr_episode):
         state = torch.from_numpy(state)
 
         if info["flag_get"]:
+            print("完成")
             end_time = timeit.default_timer()
             config_state = {'net': global_model.state_dict(),
                             'curr_episode': curr_episode,
@@ -184,6 +185,6 @@ def local_test(index, opt, global_model, start_time, curr_episode):
                        "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
 
             return True
-        elif done:
+        else:
             env.close()
             return False

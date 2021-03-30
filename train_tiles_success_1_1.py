@@ -19,8 +19,8 @@ def get_args():
     parser = argparse.ArgumentParser(
         """Implementation of model described in the paper: Asynchronous Methods for Deep Reinforcement Learning for 
         Super Mario Bros""")
-    parser.add_argument("--world", type=int, default=1)
-    parser.add_argument("--stage", type=int, default=2)
+    parser.add_argument("--world", type=int, default=2)
+    parser.add_argument("--stage", type=int, default=1)
     parser.add_argument("--action_type", type=str, default="complex")
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--gamma', type=float, default=0.9, help='discount factor for rewards')

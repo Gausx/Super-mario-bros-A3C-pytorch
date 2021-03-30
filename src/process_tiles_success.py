@@ -152,8 +152,8 @@ def local_train(index, opt, global_model, optimizer, save=False):
             return
 
         if curr_episode % opt.save_interval == 0:
-        # if info["flag_get"]:
-            if local_test(opt.num_processes, opt, global_model, start_time, curr_episode) :
+            # if info["flag_get"]:
+            if local_test(opt.num_processes, opt, global_model, start_time, curr_episode):
                 break
 
 
@@ -205,6 +205,7 @@ def local_test(index, opt, global_model, start_time, curr_episode):
         state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
 
         if info["flag_get"]:
+            print("完成")
             end_time = timeit.default_timer()
             config_state = {'net': global_model.state_dict(),
                             'curr_episode': curr_episode,
@@ -215,6 +216,6 @@ def local_test(index, opt, global_model, start_time, curr_episode):
                        "{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
 
             return True
-        elif done:
+        else:
             env.close()
             return False

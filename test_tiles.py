@@ -29,6 +29,9 @@ def test(opt):
     torch.manual_seed(123)
     env, num_states, num_actions = create_train_env(opt.world, opt.stage, opt.action_type,
                                                     "{}/video_{}_{}.mp4".format(opt.output_path, opt.world, opt.stage))
+
+    # env, num_states, num_actions = create_train_env(2, opt.stage, opt.action_type,
+    #                                                 "{}/video_{}_{}.mp4".format(opt.output_path, 2, opt.stage))
     model = ActorCritic(1, num_actions)
     if torch.cuda.is_available():
         model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage))
@@ -40,8 +43,8 @@ def test(opt):
         model_dict = torch.load("{}/a3c_super_mario_bros_{}_{}".format(opt.saved_path, opt.world, opt.stage),
                                 map_location=lambda storage, loc: storage)
         model.load_state_dict(model_dict['net'])
-        print("episode",model_dict['curr_episode'])
-        print("time",model_dict['time'])
+        print("episode", model_dict['curr_episode'])
+        print("time", model_dict['time'])
 
     model.eval()
     env.reset()
@@ -67,9 +70,13 @@ def test(opt):
         action = torch.argmax(policy).item()
         action = int(action)
         state, reward, done, info = env.step(action)
+        print(reward)
+        # print(reward, done, action)
         tiles = SMB.get_tiles_num(env.unwrapped.ram)
         tiles = process_tiles(tiles)
         state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+        # print(done,info["flag_get"])
+        print(reward)
         env.render()
         if info["flag_get"]:
             print("World {} stage {} completed".format(opt.world, opt.stage))
