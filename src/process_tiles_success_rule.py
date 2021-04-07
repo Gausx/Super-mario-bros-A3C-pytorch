@@ -78,7 +78,7 @@ def local_train(index, opt, global_model, optimizer, save=False):
 
             if rules(tiles, action):
                 done = True
-                reward = -3
+                reward = -8
             else:
                 state, reward, done, info = env.step(action)
 
@@ -236,4 +236,14 @@ def rules(tiles, action):
         ['up'],
     ]
 
-    pass
+    if (action == 2 or action == 4) and 170 in tiles and np.argwhere(tiles == 170)[0, 0] == 12 and tiles[
+        13, np.argwhere(tiles == 170)[0, 1]] == 0:
+        return True
+    else:
+        return False
+
+
+
+
+
+

@@ -3,7 +3,7 @@
 """
 import os  # NOQA: E402
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"  # NOQA: E402
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # NOQA: E402
 
 import argparse
 import torch
@@ -19,7 +19,7 @@ def get_args():
     parser = argparse.ArgumentParser(
         """Implementation of model described in the paper: Asynchronous Methods for Deep Reinforcement Learning for 
         Super Mario Bros""")
-    parser.add_argument("--world", type=int, default=2)
+    parser.add_argument("--world", type=int, default=1)
     parser.add_argument("--stage", type=int, default=1)
     parser.add_argument("--action_type", type=str, default="complex")
     parser.add_argument('--lr', type=float, default=1e-4)
@@ -35,7 +35,7 @@ def get_args():
     parser.add_argument("--saved_path", type=str, default="trained_models_tiles_rule")
     parser.add_argument("--load_from_previous_stage", type=bool, default=False,
                         help="Load weight from previous trained stage")
-    parser.add_argument("--use_gpu", type=bool, default=False)
+    parser.add_argument("--use_gpu", type=bool, default=True)
     args = parser.parse_args()
     return args
 
