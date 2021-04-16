@@ -14,7 +14,7 @@ from utils import *
 def local_train(index, opt, global_model, optimizer, save=False):
     info = {"flag_get": False}
     torch.manual_seed(123 + index)
-
+    die_id = 0
     if save:
         start_time = timeit.default_timer()
 
@@ -82,11 +82,11 @@ def local_train(index, opt, global_model, optimizer, save=False):
             else:
                 state, reward, done, info = env.step(action)
 
-            tiles = SMB.get_tiles_num(env.unwrapped.ram)
-            tiles = process_tiles(tiles)
-            state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
+                tiles = SMB.get_tiles_num(env.unwrapped.ram)
+                tiles = process_tiles(tiles)
+                state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
 
-            # env.render()
+                # env.render()
 
             if opt.use_gpu:
                 state = state.cuda()
@@ -94,6 +94,8 @@ def local_train(index, opt, global_model, optimizer, save=False):
                 done = True
 
             if done:
+                die_id += 1
+                print(die_id)
                 curr_step = 0
                 state = torch.from_numpy(tiles).unsqueeze(0).unsqueeze(0).float()
                 env.reset()
@@ -109,6 +111,7 @@ def local_train(index, opt, global_model, optimizer, save=False):
                 break
 
         R = torch.zeros((1, 1), dtype=torch.float)
+
         if opt.use_gpu:
             R = R.cuda()
         if not done:
@@ -241,9 +244,3 @@ def rules(tiles, action):
         return True
     else:
         return False
-
-
-
-
-
-
